@@ -51,6 +51,92 @@ impl Interpreter {
         }
     }
 
+    // ==================== WEBASSEMBLY IMPLEMENTATIONS ============================
+
+    pub fn run_and_capture_output(&mut self, ast: &create::parser::AstNode) -> Result<(String, Vec<u8>, usize), String> {
+        let mut output = String::new();
+
+        match ast {
+            for instruction in instructions {
+                // Use special execute instruction that captures the output
+                self.execute_instruction_capture(&mut output, instruction)?;
+            }
+            // Return output string, current memory state, and pointer position
+            Ok((output, self.memory.clone(), self.pointer))
+        }
+        _=> Err("Expected program node".to_string()),
+    }
+
+    // New execute method that captures output
+    fn execute_instruction_capture(&mut self, output: &mut String, instruction: &AstNode) -> Result<(), String> {
+        self.instruction_count += 1;
+        self.debug_step(instruction);
+        
+        let start = Instant::now();
+    
+        let result = match instruction {
+            AstNode::Output => {
+                output.push(self.memory[self.pointer] as char);
+                Ok(())
+            },
+            AstNode::Loop(instructions) => {
+                self.loop_depth += 1;
+                let mut loop_count = 0;
+                
+                while self.memory[self.pointer] != 0 {
+                    loop_count += 1;
+                    for instruction in instructions {
+                        self.execute_instruction_capture(output, instruction)?;
+                    }
+                }
+                
+                *self.loop_iterations.entry(self.loop_depth).or_insert(0) += loop_count;
+                self.loop_depth -= 1;
+                Ok(())
+            },
+            AstNode::Increment => {
+                self.memory[self.pointer] = self.memory[self.pointer].wrapping_add(1);
+                Ok(())
+            },
+            AstNode::Decrement => {
+                self.memory[self.pointer] = self.memory[self.pointer].wrapping_sub(1);
+                Ok(())
+            },
+            AstNode::Add(n) => {
+                self.memory[self.pointer] = self.memory[self.pointer].wrapping_add(*n as u8);
+                Ok(())
+            },
+            AstNode::Sub(n) => {
+                self.memory[self.pointer] = self.memory[self.pointer].wrapping_sub(*n as u8);
+                Ok(())
+            },
+            AstNode::MoveRight => {
+                if self.pointer + 1 >= self.tape_size {
+                    return Err("Pointer out of bounds".to_string());
+                }
+                self.pointer += 1;
+                Ok(())
+            },
+            AstNode::MoveLeft => {
+                if self.pointer == 0 {
+                    return Err("Pointer out of bounds".to_string());
+                }
+                self.pointer -= 1;
+                Ok(())
+            },
+            AstNode::Input => {
+                self.memory[self.pointer] = 0;
+                Ok(())
+            },
+            _ => Err("Invalid instruction".to_string()),
+        };
+
+        let duration = start.elapsed();
+        self.record_instruction(instruction, duration);
+        
+        result
+    }
+
     // ==================== BREAKPOINT IMPLEMENTATION FUNCTIONS ====================
 
     pub fn set_instruction_breakpoint(&mut self, count: usize) {
