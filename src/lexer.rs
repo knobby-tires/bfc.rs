@@ -5,6 +5,11 @@ use std::iter::Peekable;
 use std::str::Chars;
 use serde::{Serialize, Deserialize};
 
+pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
+    let mut lexer = Lexer::new(input);
+    Ok(lexer.tokenize())
+}
+
 // tokenizer
 // represents any valid token in the BrainFuck programming language.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

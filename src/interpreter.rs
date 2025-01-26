@@ -1,10 +1,15 @@
 // src/interpreter.rs 
 
-use std::hash::Hash;
+// use std::hash::Hash;
 use std::vec::Vec;
 use crate::parser::AstNode;
 use std::collections::HashMap;
 use std::time::{Instant, Duration};
+
+pub fn interpret_with_state(ast: &AstNode) -> Result<(String, Vec<u8>, usize), String> {
+    let mut interpreter = Interpreter::new();
+    interpreter.run_and_capture_output(ast)
+}
 
 pub struct Interpreter {
     memory: Vec<u8>,     // Memory tape
@@ -53,18 +58,18 @@ impl Interpreter {
 
     // ==================== WEBASSEMBLY IMPLEMENTATIONS ============================
 
-    pub fn run_and_capture_output(&mut self, ast: &create::parser::AstNode) -> Result<(String, Vec<u8>, usize), String> {
+    pub fn run_and_capture_output(&mut self, ast: &crate::parser::AstNode) -> Result<(String, Vec<u8>, usize), String> {
         let mut output = String::new();
-
+        
         match ast {
-            for instruction in instructions {
-                // Use special execute instruction that captures the output
-                self.execute_instruction_capture(&mut output, instruction)?;
-            }
-            // Return output string, current memory state, and pointer position
-            Ok((output, self.memory.clone(), self.pointer))
+            crate::parser::AstNode::Program(instructions) => {
+                for inst in instructions {
+                    self.execute_instruction_capture(&mut output, inst)?;
+                }
+                Ok((output, self.memory.clone(), self.pointer))
+            },
+            _ => Err("Expected program node".to_string())
         }
-        _=> Err("Expected program node".to_string()),
     }
 
     // New execute method that captures output
@@ -135,6 +140,11 @@ impl Interpreter {
         self.record_instruction(instruction, duration);
         
         result
+    }
+
+    pub fn interpret_with_state(ast: &AstNode) -> Result<(String, Vec<u8>, usize), String> {
+        let mut interpreter = Interpreter::new();
+        interpreter.run_and_capture_output(ast)
     }
 
     // ==================== BREAKPOINT IMPLEMENTATION FUNCTIONS ====================

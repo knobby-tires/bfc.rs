@@ -1,5 +1,7 @@
 use crate::parser::AstNode;
 
+
+
 pub struct Optimizer;
 
 impl Optimizer {

@@ -1,5 +1,10 @@
 use crate::lexer::Token;
 
+pub fn parse(tokens: Vec<Token>) -> Result<AstNode, String> {
+    let mut parser = Parser::new(tokens);
+    parser.parse()
+}
+
 // Define AST node types 
 #[derive(Debug, Clone, PartialEq)]
 
